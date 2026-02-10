@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProfiELEKTRO - Profesionální oceňovací systém</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --secondary: #34a853;
+            --danger: #ea4335;
+            --warning: #fbbc04;
+            --dark: #202124;
+            --gray: #5f6368;
+            --light-gray: #f1f3f4;
+            --border: #dadce0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .version {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .toolbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2d9348;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d33426;
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 2px solid var(--border);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover {
+            background: var(--light-gray);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .database-list {
+            list-style: none;
+        }
+
+        .database-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid transparent;
+        }
+
+        .database-item:hover {
+            background: var(--light-gray);
+        }
+
+        .database-item.active {
+            background: #e8f0fe;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .database-icon {
+            font-size: 1.3rem;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: border 0.2s;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            padding: 8px 16px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .category-tab:hover {
+            background: var(--light-gray);
+        }
+
+        .category-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .item-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
+        .item-code {
+            font-size: 0.8rem;
+            color: var(--gray);
+            background: var(--light-gray);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .item-details {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .item-unit {
+            color: var(--gray);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .quote-builder {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .quote-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 100px auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: var(--light-gray);
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .quote-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .quote-total {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 1.1rem;
+        }
+
+        .total-final {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            border-top: 2px solid var(--secondary);
+            padding-top: 12px;
+            margin-top: 8px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--secondary);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .stat-label {
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .import-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .import-zone:hover {
+            border-color: var(--primary);
+            background: var(--light-gray);
+        }
+
+        .import-zone.dragover {
+            border-color: var(--secondary);
+            background: #e8f5e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <div class="logo">⚡ ProfiELEKTRO</div>
+                <small style="opacity: 0.9;">Profesionální oceňovací systém pro elektromontáže</small>
+            </div>
+            <div class="version">v1.0 Pro</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="showSection('database')">
+                📚 Databáze
+            </button>
+            <button class="btn btn-primary" onclick="showSection('quote')">
+                📋 Nová nabídka
+            </button>
+            <button class="btn btn-outline" onclick="showImportModal()">
+                📥 Import ceníků
+            </button>
+            <button class="btn btn-outline" onclick="exportData()">
+                📤 Export dat
+            </button>
+            <div style="flex: 1"></div>
+            <button class="btn btn-success" onclick="calculateQuote()">
+                💰 Přepočítat
+            </button>
+            <button class="btn btn-primary" onclick="generatePDF()">
+                📄 PDF
+            </button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="statPraceCount">0</div>
+                <div class="stat-label">Položek prací</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statMaterialCount">0</div>
+                <div class="stat-label">Položek materiálu</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statQuoteValue">0 Kč</div>
+                <div class="stat-label">Hodnota nabídky</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statQuoteItems">0</div>
+                <div class="stat-label">Položek v nabídce</div>
+            </div>
+        </div>
+
+        <div id="databaseSection">
+            <div class="main-grid">
+                <div class="sidebar">
+                    <h3>Databáze</h3>
+                    <ul class="database-list">
+                        <li class="database-item active" onclick="switchDatabase('prace')">
+                            <span class="database-icon">🔨</span>
+                            <span>Montážní práce</span>
+                        </li>
+                        <li class="database-item" onclick="switchDatabase('material')">
+                            <span class="database-icon">📦</span>
+                            <span>Materiál</span>
+                        </li>
+                        <li class="database-item" onclick="switchDatabase('vlastni')">
+                            <span class="database-icon">⭐</span>
+                            <span>Vlastní ceník</span>
+                        </li>
+                    </ul>
+
+                    <h3 style="margin-top: 30px;">Velkoobchody</h3>
+                    <ul class="database-list">
+                        <li class="database-item" onclick="showInfo('Připojení k SONEPAR')">
+                            <span class="database-icon">🔌</span>
+                            <span>SONEPAR</span>
+                        </li>
+                        <li class="database-item" onclick="showInfo('Připojení k ELFETEX')">
+                            <span class="database-icon">🔌</span>
+                            <span>ELFETEX</span>
+                        </li>
+                        <li class="database-item" onclick="showInfo('Připojení k K&V ELEKTRO')">
+                            <span class="database-icon">🔌</span>
+                            <span>K&V ELEKTRO</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="main-content">
+                    <input type="text" class="search-bar" placeholder="🔍 Hledat v databázi..." id="searchInput" oninput="filterItems()">
+                    
+                    <div class="category-tabs" id="categoryTabs"></div>
+                    
+                    <div class="items-grid" id="itemsGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="quoteSection" style="display: none;">
+            <div class="quote-builder">
+                <h2 style="margin-bottom: 20px;">📋 Vytváření cenové nabídky</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Zákazník</label>
+                    <input type="text" class="form-control" id="customerName" placeholder="Jméno zákazníka">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Adresa</label>
+                        <input type="text" class="form-control" id="customerAddress" placeholder="Adresa">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" class="form-control" id="customerPhone" placeholder="+420">
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 15px 0;">Položky nabídky</h3>
+                <div id="quoteItems"></div>
+                
+                <button class="btn btn-outline" onclick="showAddItemModal()">
+                    ➕ Přidat položku
+                </button>
+
+                <div class="quote-total" id="quoteTotal"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro přidání položky -->
+    <div class="modal" id="addItemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Přidat položku do nabídky</h3>
+                <button class="close-modal" onclick="closeModal('addItemModal')">×</button>
+            </div>
+            <div id="modalItemsGrid" class="items-grid"></div>
+        </div>
+    </div>
+
+    <!-- Modal pro import -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Import ceníků</h3>
+                <button class="close-modal" onclick="closeModal('importModal')">×</button>
+            </div>
+            
+            <div class="import-zone" id="importZone" onclick="document.getElementById('fileInput').click()">
+                <h3>📁 Přetáhněte soubor nebo klikněte</h3>
+                <p style="color: var(--gray); margin-top: 10px;">Podporované formáty: XLSX, CSV, JSON</p>
+                <input type="file" id="fileInput" style="display: none;" accept=".xlsx,.xls,.csv,.json" onchange="handleFileImport(event)">
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h4>Formát souboru:</h4>
+                <p style="color: var(--gray); font-size: 0.9rem;">
+                    <strong>ELFETEX ceník OCEP:</strong> Automaticky rozpoznán<br>
+                    <strong>Excel/CSV:</strong> Sloupce - Název, Kategorie, Jednotka, Cena, DPH<br>
+                    <strong>JSON:</strong> {items: [{name, category, unit, price, vat}]}
+                </p>
+                
+                <div id="importedInfo" style="margin-top: 15px;"></div>
+            </div>
+            
+            <script>
+                // Zobrazit info o importovaném ceníku
+                function updateImportInfo() {
+                    const elfetexImported = localStorage.getItem('elfetex_imported');
+                    const infoDiv = document.getElementById('importedInfo');
+                    
+                    if (elfetexImported) {
+                        try {
+                            const data = JSON.parse(elfetexImported);
+                            infoDiv.innerHTML = `
+                                <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                                    <strong>✓ ELFETEX ceník načten</strong><br>
+                                    <small>${data.length.toLocaleString('cs-CZ')} položek v paměti</small><br>
+                                    <button class="btn btn-danger" style="margin-top: 10px;" onclick="clearImportedCatalog()">
+                                        🗑️ Smazat importovaný ceník
+                                    </button>
+                                </div>
+                            `;
+                        } catch (err) {
+                            infoDiv.innerHTML = '';
+                        }
+                    } else {
+                        infoDiv.innerHTML = '';
+                    }
+                }
+                
+                function clearImportedCatalog() {
+                    if (confirm('Opravdu chcete smazat importovaný ELFETEX ceník?')) {
+                        localStorage.removeItem('elfetex_imported');
+                        updateImportInfo();
+                        loadDatabase();
+                        showNotification('Importovaný ceník smazán', 'success');
+                        closeModal('importModal');
+                    }
+                }
+                
+                // Aktualizovat info při otevření modalu
+                document.addEventListener('DOMContentLoaded', () => {
+                    const importModal = document.getElementById('importModal');
+                    const observer = new MutationObserver(() => {
+                        if (importModal.classList.contains('active')) {
+                            updateImportInfo();
+                        }
+                    });
+                    observer.observe(importModal, { attributes: true });
+                });
+            </script>
+        </div>
+    </div>
+
+    <script>
+        // Globální proměnné
+        let currentDatabase = 'prace';
+        let currentCategory = 'all';
+        let quoteItems = [];
+        let db;
+
+        // Rozšířená databáze materiálů (podle velkoobchodních ceníků)
+        const materialDatabase = {
+            'Kabely a vodiče': [
+                {id: 1, code: 'CYKY-J 3x1,5', name: 'CYKY-J 3x1,5 (300/500V)', unit: 'm', price: 32, vat: 21, stock: 'SONEPAR'},
+                {id: 2, code: 'CYKY-J 3x2,5', name: 'CYKY-J 3x2,5 (300/500V)', unit: 'm', price: 45, vat: 21, stock: 'SONEPAR'},
+                {id: 3, code: 'CYKY-J 5x2,5', name: 'CYKY-J 5x2,5 (300/500V)', unit: 'm', price: 78, vat: 21, stock: 'ELFETEX'},
+                {id: 4, code: 'CYKY-J 4x10', name: 'CYKY-J 4x10 (300/500V)', unit: 'm', price: 185, vat: 21, stock: 'K&V'},
+                {id: 5, code: 'CYKY-O 3x2,5', name: 'CYKY-O 3x2,5 (300/500V)', unit: 'm', price: 52, vat: 21, stock: 'SONEPAR'},
+                {id: 6, code: 'NYM-J 3x1,5', name: 'NYM-J 3x1,5 (300/500V)', unit: 'm', price: 28, vat: 21, stock: 'ELFETEX'},
+                {id: 7, code: 'NYM-J 3x2,5', name: 'NYM-J 3x2,5 (300/500V)', unit: 'm', price: 42, vat: 21, stock: 'ELFETEX'},
+                {id: 8, code: 'H07V-U 1,5', name: 'H07V-U 1,5mm² (450/750V)', unit: 'm', price: 8.5, vat: 21, stock: 'K&V'},
+                {id: 9, code: 'H07V-U 2,5', name: 'H07V-U 2,5mm² (450/750V)', unit: 'm', price: 12, vat: 21, stock: 'K&V'},
+                {id: 10, code: 'H07V-K 1,5', name: 'H07V-K 1,5mm² (450/750V)', unit: 'm', price: 9, vat: 21, stock: 'SONEPAR'},
+                {id: 11, code: 'CYKY-J 3x4', name: 'CYKY-J 3x4 (300/500V)', unit: 'm', price: 68, vat: 21, stock: 'ELFETEX'},
+                {id: 12, code: 'CYKY-J 5x6', name: 'CYKY-J 5x6 (300/500V)', unit: 'm', price: 145, vat: 21, stock: 'SONEPAR'},
+            ],
+            'Krabice a plechovky': [
+                {id: 20, code: 'KP 64/40', name: 'Krabice přístrojová KP 64/40 pod omítku', unit: 'ks', price: 8.5, vat: 21, stock: 'SONEPAR'},
+                {id: 21, code: 'KP 68/35', name: 'Krabice přístrojová KP 68/35 hluboká', unit: 'ks', price: 9.8, vat: 21, stock: 'ELFETEX'},
+                {id: 22, code: 'KU 68/35', name: 'Krabice univerzální KU 68/35', unit: 'ks', price: 11.5, vat: 21, stock: 'K&V'},
+                {id: 23, code: 'KPM 100/40', name: 'Krabice přístrojová na omítku KPM 100/40', unit: 'ks', price: 15.5, vat: 21, stock: 'SONEPAR'},
+                {id: 24, code: 'KB 100x100', name: 'Krabice beton. 100x100x50 IP55', unit: 'ks', price: 42, vat: 21, stock: 'ELFETEX'},
+                {id: 25, code: 'KSK 80x80', name: 'Krabice sádrokarton 80x80x52', unit: 'ks', price: 12, vat: 21, stock: 'K&V'},
+                {id: 26, code: 'KSK 2x', name: 'Krabice sádrokarton 2-násobná', unit: 'ks', price: 18, vat: 21, stock: 'SONEPAR'},
+                {id: 27, code: 'KSK 3x', name: 'Krabice sádrokarton 3-násobná', unit: 'ks', price: 24, vat: 21, stock: 'ELFETEX'},
+                {id: 28, code: 'KO 100', name: 'Krabice odbočná 100x100x50', unit: 'ks', price: 28, vat: 21, stock: 'K&V'},
+                {id: 29, code: 'KO 150', name: 'Krabice odbočná 150x110x70', unit: 'ks', price: 45, vat: 21, stock: 'SONEPAR'},
+            ],
+            'Zásuvky a vypínače': [
+                {id: 40, code: 'ZAS-JED', name: 'Zásuvka jednoduchá TANGO', unit: 'ks', price: 45, vat: 21, stock: 'SONEPAR'},
+                {id: 41, code: 'ZAS-2', name: 'Zásuvka dvojnásobná TANGO', unit: 'ks', price: 85, vat: 21, stock: 'SONEPAR'},
+                {id: 42, code: 'VYP-JED', name: 'Vypínač jednopólový TANGO', unit: 'ks', price: 38, vat: 21, stock: 'ELFETEX'},
+                {id: 43, code: 'VYP-SER', name: 'Vypínač sériový TANGO', unit: 'ks', price: 52, vat: 21, stock: 'ELFETEX'},
+                {id: 44, code: 'VYP-KRIZ', name: 'Vypínač křížový TANGO', unit: 'ks', price: 68, vat: 21, stock: 'K&V'},
+                {id: 45, code: 'ZAS-IP44', name: 'Zásuvka IP44 s víčkem', unit: 'ks', price: 78, vat: 21, stock: 'SONEPAR'},
+                {id: 46, code: 'ZAS-TVSAT', name: 'Zásuvka TV+SAT koncová', unit: 'ks', price: 125, vat: 21, stock: 'ELFETEX'},
+                {id: 47, code: 'ZAS-RJ45', name: 'Zásuvka datová RJ45 Cat6', unit: 'ks', price: 95, vat: 21, stock: 'K&V'},
+                {id: 48, code: 'RAM-1', name: 'Rámeček 1-násobný TANGO', unit: 'ks', price: 18, vat: 21, stock: 'SONEPAR'},
+                {id: 49, code: 'RAM-2', name: 'Rámeček 2-násobný TANGO', unit: 'ks', price: 28, vat: 21, stock: 'ELFETEX'},
+                {id: 50, code: 'RAM-3', name: 'Rámeček 3-násobný TANGO', unit: 'ks', price: 35, vat: 21, stock: 'K&V'},
+            ],
+            'Svítidla': [
+                {id: 60, code: 'LED-PAN-60', name: 'LED panel 60x60cm 40W 4000K', unit: 'ks', price: 450, vat: 21, stock: 'SONEPAR'},
+                {id: 61, code: 'LED-PAN-120', name: 'LED panel 120x30cm 40W 4000K', unit: 'ks', price: 550, vat: 21, stock: 'ELFETEX'},
+                {id: 62, code: 'LED-DOWN-12', name: 'LED downlight 12W kulatý bílý', unit: 'ks', price: 185, vat: 21, stock: 'K&V'},
+                {id: 63, code: 'LED-DOWN-18', name: 'LED downlight 18W kulatý bílý', unit: 'ks', price: 245, vat: 21, stock: 'SONEPAR'},
+                {id: 64, code: 'LED-TUBE-120', name: 'LED trubice 120cm 18W 4000K', unit: 'ks', price: 145, vat: 21, stock: 'ELFETEX'},
+                {id: 65, code: 'LED-TUBE-150', name: 'LED trubice 150cm 22W 4000K', unit: 'ks', price: 165, vat: 21, stock: 'K&V'},
+                {id: 66, code: 'LED-NASTAV', name: 'LED nástěnné 10W IP54', unit: 'ks', price: 285, vat: 21, stock: 'SONEPAR'},
+                {id: 67, code: 'LED-REFLEX', name: 'LED reflektor 50W IP65', unit: 'ks', price: 385, vat: 21, stock: 'ELFETEX'},
+                {id: 68, code: 'LED-ZAROVKA-E27', name: 'LED žárovka E27 10W', unit: 'ks', price: 65, vat: 21, stock: 'K&V'},
+                {id: 69, code: 'LED-ZAROVKA-GU10', name: 'LED žárovka GU10 7W', unit: 'ks', price: 55, vat: 21, stock: 'SONEPAR'},
+            ],
+            'Jističe a chrániče': [
+                {id: 80, code: 'JIS-B16', name: 'Jistič 1P B16 6kA', unit: 'ks', price: 85, vat: 21, stock: 'SONEPAR'},
+                {id: 81, code: 'JIS-B20', name: 'Jistič 1P B20 6kA', unit: 'ks', price: 85, vat: 21, stock: 'ELFETEX'},
+                {id: 82, code: 'JIS-3P-B16', name: 'Jistič 3P B16 6kA', unit: 'ks', price: 285, vat: 21, stock: 'K&V'},
+                {id: 83, code: 'JIS-3P-B25', name: 'Jistič 3P B25 6kA', unit: 'ks', price: 285, vat: 21, stock: 'SONEPAR'},
+                {id: 84, code: 'PRCH-2P-25A', name: 'Proudový chránič 2P 25A 30mA', unit: 'ks', price: 385, vat: 21, stock: 'ELFETEX'},
+                {id: 85, code: 'PRCH-2P-40A', name: 'Proudový chránič 2P 40A 30mA', unit: 'ks', price: 395, vat: 21, stock: 'K&V'},
+                {id: 86, code: 'PRCH-4P-40A', name: 'Proudový chránič 4P 40A 30mA', unit: 'ks', price: 785, vat: 21, stock: 'SONEPAR'},
+                {id: 87, code: 'RCBO-16A', name: 'Jistič s proudovým chráničem 16A', unit: 'ks', price: 485, vat: 21, stock: 'ELFETEX'},
+                {id: 88, code: 'RCBO-20A', name: 'Jistič s proudovým chráničem 20A', unit: 'ks', price: 485, vat: 21, stock: 'K&V'},
+            ],
+            'Rozvaděče': [
+                {id: 100, code: 'ROZ-PO-12', name: 'Rozvaděč pod omítku 12 modulů', unit: 'ks', price: 385, vat: 21, stock: 'SONEPAR'},
+                {id: 101, code: 'ROZ-PO-24', name: 'Rozvaděč pod omítku 24 modulů', unit: 'ks', price: 585, vat: 21, stock: 'ELFETEX'},
+                {id: 102, code: 'ROZ-PO-36', name: 'Rozvaděč pod omítku 36 modulů', unit: 'ks', price: 785, vat: 21, stock: 'K&V'},
+                {id: 103, code: 'ROZ-NO-12', name: 'Rozvaděč na omítku IP40 12 modulů', unit: 'ks', price: 485, vat: 21, stock: 'SONEPAR'},
+                {id: 104, code: 'ROZ-NO-24', name: 'Rozvaděč na omítku IP40 24 modulů', unit: 'ks', price: 685, vat: 21, stock: 'ELFETEX'},
+                {id: 105, code: 'ROZ-NO-36', name: 'Rozvaděč na omítku IP65 36 modulů', unit: 'ks', price: 1285, vat: 21, stock: 'K&V'},
+                {id: 106, code: 'ROZ-PRIEM', name: 'Rozvaděč průmyslový IP65 48 modulů', unit: 'ks', price: 2150, vat: 21, stock: 'SONEPAR'},
+            ],
+            'Trubky a lišty': [
+                {id: 120, code: 'TRUB-16', name: 'Trubka ohebná 16mm', unit: 'm', price: 18, vat: 21, stock: 'SONEPAR'},
+                {id: 121, code: 'TRUB-20', name: 'Trubka ohebná 20mm', unit: 'm', price: 22, vat: 21, stock: 'ELFETEX'},
+                {id: 122, code: 'TRUB-25', name: 'Trubka ohebná 25mm', unit: 'm', price: 28, vat: 21, stock: 'K&V'},
+                {id: 123, code: 'TRUB-TVRD-16', name: 'Trubka tvrdá PVC 16mm', unit: 'm', price: 25, vat: 21, stock: 'SONEPAR'},
+                {id: 124, code: 'LISTA-20x10', name: 'Lišta elektroinstal. 20x10mm', unit: 'm', price: 32, vat: 21, stock: 'ELFETEX'},
+                {id: 125, code: 'LISTA-40x25', name: 'Lišta elektroinstal. 40x25mm', unit: 'm', price: 48, vat: 21, stock: 'K&V'},
+                {id: 126, code: 'ZLABPARAPETNI', name: 'Žlab parapetní 60x60mm', unit: 'm', price: 185, vat: 21, stock: 'SONEPAR'},
+            ],
+            'Svorkovnice': [
+                {id: 140, code: 'SVOR-2,5', name: 'Svorkovnice řadová 2,5mm²', unit: 'ks', price: 8.5, vat: 21, stock: 'SONEPAR'},
+                {id: 141, code: 'SVOR-4', name: 'Svorkovnice řadová 4mm²', unit: 'ks', price: 12, vat: 21, stock: 'ELFETEX'},
+                {id: 142, code: 'WAGO-221', name: 'Svorka WAGO 221-412 (2x)', unit: 'ks', price: 8, vat: 21, stock: 'K&V'},
+                {id: 143, code: 'WAGO-221-3', name: 'Svorka WAGO 221-413 (3x)', unit: 'ks', price: 10, vat: 21, stock: 'SONEPAR'},
+                {id: 144, code: 'WAGO-221-5', name: 'Svorka WAGO 221-415 (5x)', unit: 'ks', price: 14, vat: 21, stock: 'ELFETEX'},
+            ],
+            'Kabelové žlaby': [
+                {id: 160, code: 'ZLAB-60x60', name: 'Žlab kabelový 60x60mm', unit: 'm', price: 95, vat: 21, stock: 'SONEPAR'},
+                {id: 161, code: 'ZLAB-100x60', name: 'Žlab kabelový 100x60mm', unit: 'm', price: 145, vat: 21, stock: 'ELFETEX'},
+                {id: 162, code: 'ZLAB-150x60', name: 'Žlab kabelový 150x60mm', unit: 'm', price: 185, vat: 21, stock: 'K&V'},
+                {id: 163, code: 'REBRIK-50', name: 'Kabelový žebřík 50mm', unit: 'm', price: 285, vat: 21, stock: 'SONEPAR'},
+            ],
+        };
+
+        // Rozšířená databáze prací z cenikyremesel.cz
+        const workDatabase = {
+            'Sekání drážek': [
+                {id: 1, name: 'Sekání drážky v ytongu (30mm)', unit: 'm', price: 56, vat: 21},
+                {id: 2, name: 'Sekání drážky v ytongu (50mm)', unit: 'm', price: 69, vat: 21},
+                {id: 3, name: 'Sekání drážky v cihle (30mm)', unit: 'm', price: 69, vat: 21},
+                {id: 4, name: 'Sekání drážky v cihle (50mm)', unit: 'm', price: 81, vat: 21},
+                {id: 5, name: 'Sekání drážky v betonu (30mm)', unit: 'm', price: 94, vat: 21},
+                {id: 6, name: 'Sekání drážky v betonu (50mm)', unit: 'm', price: 125, vat: 21},
+                {id: 7, name: 'Výřez + sekání betonu (30mm)', unit: 'm', price: 138, vat: 21},
+                {id: 8, name: 'Výřez + sekání betonu (50mm)', unit: 'm', price: 188, vat: 21},
+            ],
+            'Vykroužení kapes': [
+                {id: 20, name: 'Vykroužení v ytongu pr.72mm', unit: 'ks', price: 75, vat: 21},
+                {id: 21, name: 'Vykroužení v cihle pr.72mm', unit: 'ks', price: 88, vat: 21},
+                {id: 22, name: 'Vykroužení v betonu pr.72mm', unit: 'ks', price: 125, vat: 21},
+                {id: 23, name: 'Vykroužení v SDK pr.72mm', unit: 'ks', price: 50, vat: 21},
+                {id: 24, name: 'Kapsa rozvaděč ytong 400x500mm', unit: 'ks', price: 494, vat: 21},
+                {id: 25, name: 'Kapsa rozvaděč cihla 400x500mm', unit: 'ks', price: 544, vat: 21},
+            ],
+            'Krabice': [
+                {id: 40, name: 'Osazení krabice do zdiva vč.sádra', unit: 'ks', price: 34, vat: 21},
+                {id: 41, name: 'Osazení krabice do SDK', unit: 'ks', price: 24, vat: 21},
+                {id: 42, name: 'Osazení 2x krabice SDK', unit: 'ks', price: 29, vat: 21},
+                {id: 43, name: 'Osazení 3x krabice SDK', unit: 'ks', price: 35, vat: 21},
+                {id: 44, name: 'Zapojení vodičů v krabici', unit: 'ks', price: 33, vat: 21},
+            ],
+            'Tahání kabelů': [
+                {id: 60, name: 'Tahání CYKY 3x2,5 ve zdech', unit: 'm', price: 33, vat: 21},
+                {id: 61, name: 'Tahání CYKY 3x2,5 v SDK', unit: 'm', price: 30, vat: 21},
+                {id: 62, name: 'Tahání CYKY 3x2,5 volně', unit: 'm', price: 32, vat: 21},
+                {id: 63, name: 'Tahání CYKY 5x2,5 ve zdech', unit: 'm', price: 38, vat: 21},
+                {id: 64, name: 'Tahání CYKY 4x10 ve zdech', unit: 'm', price: 55, vat: 21},
+                {id: 65, name: 'Tahání zemnícího drátu ve zdech', unit: 'm', price: 29, vat: 21},
+                {id: 66, name: 'Tahání kabelu UTP ve zdech', unit: 'm', price: 29, vat: 21},
+            ],
+            'Rozvaděče': [
+                {id: 80, name: 'Osazení rozvaděče do zdi (400x500)', unit: 'ks', price: 615, vat: 21},
+                {id: 81, name: 'Osazení rozvaděče na zeď (400x500)', unit: 'ks', price: 423, vat: 21},
+                {id: 82, name: 'Zapojení jednofáz. jističe', unit: 'ks', price: 232, vat: 21},
+                {id: 83, name: 'Zapojení třífáz. jističe', unit: 'ks', price: 457, vat: 21},
+                {id: 84, name: 'Zapojení proudového chrániče 1F', unit: 'ks', price: 322, vat: 21},
+                {id: 85, name: 'Zapojení proudového chrániče 3F', unit: 'ks', price: 475, vat: 21},
+            ],
+            'Zásuvky a vypínače': [
+                {id: 100, name: 'Osazení a zapojení zásuvky', unit: 'ks', price: 108, vat: 21},
+                {id: 101, name: 'Osazení a zapojení spínače', unit: 'ks', price: 90, vat: 21},
+                {id: 102, name: 'Osazení a zapojení přepínače', unit: 'ks', price: 99, vat: 21},
+                {id: 103, name: 'Osazení a zapojení zásuvky TV+SAT', unit: 'ks', price: 148, vat: 21},
+            ],
+            'Svítidla': [
+                {id: 120, name: 'Montáž žárovkového svítidla', unit: 'ks', price: 294, vat: 21},
+                {id: 121, name: 'Montáž zářivkového svítidla', unit: 'ks', price: 350, vat: 21},
+                {id: 122, name: 'Montáž LED pásku vč.lišty', unit: 'm', price: 207, vat: 21},
+                {id: 123, name: 'Montáž bodového svítidla', unit: 'ks', price: 144, vat: 21},
+            ],
+            'Spotřebiče': [
+                {id: 140, name: 'Zapojení digestoře', unit: 'ks', price: 483, vat: 21},
+                {id: 141, name: 'Zapojení varné desky', unit: 'ks', price: 483, vat: 21},
+                {id: 142, name: 'Zapojení trouby', unit: 'ks', price: 483, vat: 21},
+                {id: 143, name: 'Zapojení bojleru', unit: 'ks', price: 483, vat: 21},
+            ],
+            'Revize': [
+                {id: 160, name: 'Revize bytu 1+1', unit: 'ks', price: 2313, vat: 21},
+                {id: 161, name: 'Revize bytu 2+1', unit: 'ks', price: 2688, vat: 21},
+                {id: 162, name: 'Revize bytu 3+1', unit: 'ks', price: 3063, vat: 21},
+                {id: 163, name: 'Revize spotřebiče', unit: 'ks', price: 313, vat: 21},
+            ],
+            'Demontáže': [
+                {id: 180, name: 'Demontáž zásuvky', unit: 'ks', price: 43, vat: 21},
+                {id: 181, name: 'Demontáž vypínače', unit: 'ks', price: 43, vat: 21},
+                {id: 182, name: 'Demontáž svítidla', unit: 'ks', price: 43, vat: 21},
+                {id: 183, name: 'Demontáž el.instalace bytu 2+1', unit: 'ks', price: 1875, vat: 21},
+            ],
+            'Hodinová sazba': [
+                {id: 200, name: 'Elektrikářské práce hodinově', unit: 'hod', price: 350, vat: 21},
+            ],
+        };
+
+        // Inicializace
+        async function init() {
+            await initDB();
+            loadDatabase();
+            updateStats();
+            setupDragDrop();
+        }
+
+        // IndexedDB inicializace
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('ProfiElektroDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    
+                    if (!db.objectStoreNames.contains('prace')) {
+                        db.createObjectStore('prace', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('material')) {
+                        db.createObjectStore('material', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('vlastni')) {
+                        db.createObjectStore('vlastni', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('quotes')) {
+                        db.createObjectStore('quotes', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        // Načtení databáze
+        function loadDatabase() {
+            const categories = currentDatabase === 'material' 
+                ? Object.keys(materialDatabase)
+                : Object.keys(workDatabase);
+            
+            renderCategories(categories);
+            renderItems();
+        }
+
+        // Vykreslení kategorií
+        function renderCategories(categories) {
+            // Zkusit načíst ELFETEX kategorie
+            const elfetexImported = localStorage.getItem('elfetex_imported');
+            if (currentDatabase === 'material' && elfetexImported) {
+                try {
+                    const elfetexData = JSON.parse(elfetexImported);
+                    const elfetexCategories = [...new Set(elfetexData.map(item => item.category))].sort();
+                    categories = elfetexCategories;
+                } catch (err) {
+                    // Použít výchozí kategorie
+                }
+            }
+            
+            const container = document.getElementById('categoryTabs');
+            container.innerHTML = `
+                <div class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="selectCategory('all')">
+                    Vše
+                </div>
+                ${categories.map(cat => `
+                    <div class="category-tab ${currentCategory === cat ? 'active' : ''}" onclick="selectCategory('${cat.replace(/'/g, "\\'")}')">
+                        ${cat}
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Vykreslení položek
+        async function renderItems() {
+            const container = document.getElementById('itemsGrid');
+            let database;
+            
+            // Zkusit načíst importovaný ELFETEX ceník
+            const elfetexImported = localStorage.getItem('elfetex_imported');
+            if (currentDatabase === 'material' && elfetexImported) {
+                try {
+                    const elfetexData = JSON.parse(elfetexImported);
+                    
+                    // Vytvořit databázi z ELFETEX dat
+                    const elfetexDB = {};
+                    elfetexData.forEach(item => {
+                        const cat = item.category || 'Ostatní';
+                        if (!elfetexDB[cat]) {
+                            elfetexDB[cat] = [];
+                        }
+                        elfetexDB[cat].push(item);
+                    });
+                    
+                    database = elfetexDB;
+                } catch (err) {
+                    database = currentDatabase === 'material' ? materialDatabase : workDatabase;
+                }
+            } else {
+                database = currentDatabase === 'material' ? materialDatabase : workDatabase;
+            }
+            
+            let items = [];
+            
+            if (currentCategory === 'all') {
+                Object.values(database).forEach(categoryItems => {
+                    items = items.concat(categoryItems);
+                });
+            } else {
+                items = database[currentCategory] || [];
+            }
+            
+            // Filtrování podle vyhledávání
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                items = items.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    (item.code && item.code.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Zobrazit info o importovaném ceníku
+            if (currentDatabase === 'material' && elfetexImported) {
+                const elfetexData = JSON.parse(elfetexImported);
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                        <strong>✓ ELFETEX ceník načten</strong><br>
+                        <small>${elfetexData.length.toLocaleString('cs-CZ')} položek | Použijte vyhledávání pro filtrování</small>
+                    </div>
+                `;
+            }
+            
+            if (items.length === 0) {
+                container.innerHTML += '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray);">Žádné položky nenalezeny</div>';
+                return;
+            }
+            
+            // Omezit zobrazení na prvních 50 položek pro rychlost
+            const displayItems = items.slice(0, 50);
+            
+            container.innerHTML += displayItems.map(item => `
+                <div class="item-card" onclick="addToQuote(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                    <div class="item-header">
+                        <div class="item-name">${item.name}</div>
+                        ${item.code ? `<div class="item-code">${item.code}</div>` : ''}
+                    </div>
+                    <div class="item-details">
+                        <div class="item-price">${item.price.toFixed(2)} Kč</div>
+                        <div class="item-unit">/${item.unit}</div>
+                        ${item.stock ? `<div style="color: var(--gray); font-size: 0.8rem;">📦 ${item.stock}</div>` : ''}
+                        ${item.supplier ? `<div style="color: var(--gray); font-size: 0.8rem;">🏢 ${item.supplier}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            if (items.length > 50) {
+                container.innerHTML += `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--gray);">
+                        Zobrazeno prvních 50 z ${items.length.toLocaleString('cs-CZ')} položek. Použijte vyhledávání pro upřesnění.
+                    </div>
+                `;
+            }
+        }
+
+        // Přepnutí databáze
+        function switchDatabase(dbName) {
+            currentDatabase = dbName;
+            currentCategory = 'all';
+            
+            document.querySelectorAll('.database-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.database-item').classList.add('active');
+            
+            loadDatabase();
+        }
+
+        // Výběr kategorie
+        function selectCategory(category) {
+            currentCategory = category;
+            renderItems();
+            renderCategories(currentDatabase === 'material' 
+                ? Object.keys(materialDatabase)
+                : Object.keys(workDatabase));
+        }
+
+        // Filtrování položek
+        function filterItems() {
+            renderItems();
+        }
+
+        // Přidání do nabídky
+        function addToQuote(item) {
+            quoteItems.push({
+                ...item,
+                quantity: 1,
+                customPrice: item.price,
+                type: currentDatabase
+            });
+            
+            renderQuoteItems();
+            updateStats();
+            showNotification('Položka přidána do nabídky', 'success');
+        }
+
+        // Vykreslení položek nabídky
+        function renderQuoteItems() {
+            const container = document.getElementById('quoteItems');
+            
+            if (quoteItems.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 40px;">Zatím žádné položky. Přidejte položky z databáze.</p>';
+                return;
+            }
+            
+            container.innerHTML = quoteItems.map((item, index) => `
+                <div class="quote-row">
+                    <div>
+                        <strong>${item.name}</strong>
+                        ${item.code ? `<br><small style="color: var(--gray);">${item.code}</small>` : ''}
+                    </div>
+                    <input type="number" class="form-control" value="${item.quantity}" 
+                           onchange="updateQuantity(${index}, this.value)" min="0" step="0.1">
+                    <div style="text-align: center;">${item.unit}</div>
+                    <input type="number" class="form-control" value="${item.customPrice}" 
+                           onchange="updatePrice(${index}, this.value)" min="0" step="0.01"
+                           style="border: 2px solid var(--secondary);">
+                    <div style="text-align: right; font-weight: 600;">
+                        ${(item.quantity * item.customPrice * (1 + item.vat/100)).toFixed(2)} Kč
+                    </div>
+                    <button class="btn btn-danger" onclick="removeFromQuote(${index})" style="padding: 8px;">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        // Aktualizace množství
+        function updateQuantity(index, value) {
+            quoteItems[index].quantity = parseFloat(value) || 0;
+            calculateQuote();
+        }
+
+        // Aktualizace ceny
+        function updatePrice(index, value) {
+            quoteItems[index].customPrice = parseFloat(value) || 0;
+            calculateQuote();
+        }
+
+        // Odstranění z nabídky
+        function removeFromQuote(index) {
+            quoteItems.splice(index, 1);
+            renderQuoteItems();
+            calculateQuote();
+        }
+
+        // Výpočet nabídky
+        function calculateQuote() {
+            let totalWithoutVat = 0;
+            let totalVat = 0;
+            
+            quoteItems.forEach(item => {
+                const priceWithoutVat = item.quantity * item.customPrice;
+                const vat = priceWithoutVat * (item.vat / 100);
+                totalWithoutVat += priceWithoutVat;
+                totalVat += vat;
+            });
+            
+            const totalWithVat = totalWithoutVat + totalVat;
+            
+            const container = document.getElementById('quoteTotal');
+            container.innerHTML = `
+                <div class="total-row">
+                    <span>Celkem bez DPH:</span>
+                    <span>${totalWithoutVat.toFixed(2)} Kč</span>
+                </div>
+                <div class="total-row">
+                    <span>DPH (21%):</span>
+                    <span>${totalVat.toFixed(2)} Kč</span>
+                </div>
+                <div class="total-row total-final">
+                    <span>CELKOVÁ CENA:</span>
+                    <span>${totalWithVat.toFixed(2)} Kč</span>
+                </div>
+            `;
+            
+            updateStats();
+            renderQuoteItems();
+        }
+
+        // Aktualizace statistik
+        function updateStats() {
+            const praceCount = Object.values(workDatabase).reduce((sum, cat) => sum + cat.length, 0);
+            const materialCount = Object.values(materialDatabase).reduce((sum, cat) => sum + cat.length, 0);
+            
+            let totalValue = 0;
+            quoteItems.forEach(item => {
+                totalValue += item.quantity * item.customPrice * (1 + item.vat/100);
+            });
+            
+            document.getElementById('statPraceCount').textContent = praceCount;
+            document.getElementById('statMaterialCount').textContent = materialCount;
+            document.getElementById('statQuoteValue').textContent = totalValue.toFixed(0) + ' Kč';
+            document.getElementById('statQuoteItems').textContent = quoteItems.length;
+        }
+
+        // Zobrazení sekce
+        function showSection(section) {
+            document.getElementById('databaseSection').style.display = section === 'database' ? 'block' : 'none';
+            document.getElementById('quoteSection').style.display = section === 'quote' ? 'block' : 'none';
+        }
+
+        // Modal operace
+        function showAddItemModal() {
+            document.getElementById('addItemModal').classList.add('active');
+            renderModalItems();
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function renderModalItems() {
+            const container = document.getElementById('modalItemsGrid');
+            const database = currentDatabase === 'material' ? materialDatabase : workDatabase;
+            
+            let items = [];
+            Object.values(database).forEach(categoryItems => {
+                items = items.concat(categoryItems);
+            });
+            
+            container.innerHTML = items.slice(0, 20).map(item => `
+                <div class="item-card" onclick="addToQuote(${JSON.stringify(item).replace(/"/g, '&quot;')}); closeModal('addItemModal')">
+                    <div class="item-header">
+                        <div class="item-name">${item.name}</div>
+                    </div>
+                    <div class="item-details">
+                        <div class="item-price">${item.price.toFixed(2)} Kč</div>
+                        <div class="item-unit">/${item.unit}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Import souboru
+        async function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            showNotification('Načítání souboru...', 'success');
+            
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.json')) {
+                reader.onload = async (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.items && Array.isArray(data.items)) {
+                            // Import položek do databáze
+                            await importItemsToDB(data.items);
+                            showNotification(`✓ Importováno ${data.items.length} položek`, 'success');
+                            loadDatabase();
+                            updateStats();
+                        }
+                    } catch (err) {
+                        showNotification('Chyba při čtení JSON: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                reader.onload = async (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                        
+                        showNotification('Zpracovávám ELFETEX ceník...', 'success');
+                        
+                        // Detekce formátu ELFETEX
+                        const isElfetex = jsonData.length > 0 && 
+                            (jsonData[0].ZKRATKA !== undefined || 
+                             jsonData[0].NAZEV_ZBOZ !== undefined);
+                        
+                        let items = [];
+                        
+                        if (isElfetex) {
+                            // ELFETEX formát
+                            items = jsonData.map((row, index) => {
+                                let price = 0;
+                                if (row.CENA) {
+                                    const priceStr = String(row.CENA).replace(',', '.');
+                                    price = parseFloat(priceStr) || 0;
+                                }
+                                
+                                return {
+                                    id: `elfetex-${index}`,
+                                    code: row.ZKRATKA || '',
+                                    name: row.NAZEV_ZBOZ || 'Bez názvu',
+                                    unit: (row.MJ || 'ks').toLowerCase(),
+                                    price: Math.round(price * 100) / 100,
+                                    category: (row.UROVEN1 && row.UROVEN1 !== '_Nezařazeno_') ? row.UROVEN1 : 'Ostatní',
+                                    subcategory: row.UROVEN2 || '',
+                                    vat: 21,
+                                    supplier: 'ELFETEX'
+                                };
+                            }).filter(item => item.name !== 'Bez názvu' && item.price > 0);
+                            
+                            // Uložit do localStorage pro rychlý přístup
+                            localStorage.setItem('elfetex_imported', JSON.stringify(items));
+                            
+                            showNotification(`✓ ELFETEX: Importováno ${items.length.toLocaleString('cs-CZ')} položek!`, 'success');
+                            
+                            // Přidat do databáze (pouze první 1000 pro rychlost)
+                            if (items.length > 1000) {
+                                if (confirm(`Ceník obsahuje ${items.length.toLocaleString('cs-CZ')} položek. Chcete importovat všechny? (Může trvat několik minut)`)) {
+                                    await importItemsToDB(items);
+                                } else {
+                                    await importItemsToDB(items.slice(0, 1000));
+                                    showNotification('Importováno prvních 1000 položek', 'success');
+                                }
+                            } else {
+                                await importItemsToDB(items);
+                            }
+                            
+                        } else {
+                            // Obecný Excel formát
+                            items = jsonData.map(row => ({
+                                name: row.Název || row.name || row.NÁZEV || '',
+                                category: row.Kategorie || row.category || row.KATEGORIE || 'Ostatní',
+                                unit: (row.Jednotka || row.unit || row.JEDNOTKA || 'ks').toLowerCase(),
+                                price: parseFloat(String(row.Cena || row.price || row.CENA || '0').replace(',', '.')) || 0,
+                                vat: parseInt(row.DPH || row.vat || 21),
+                                code: row.Kód || row.code || row.KÓD || ''
+                            })).filter(item => item.name && item.price > 0);
+                            
+                            await importItemsToDB(items);
+                            showNotification(`✓ Importováno ${items.length} položek`, 'success');
+                        }
+                        
+                        loadDatabase();
+                        updateStats();
+                        
+                    } catch (err) {
+                        console.error(err);
+                        showNotification('Chyba při čtení Excel: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            closeModal('importModal');
+        }
+
+        // Import položek do databáze
+        async function importItemsToDB(items) {
+            const batchSize = 100;
+            let imported = 0;
+            
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                
+                for (const item of batch) {
+                    try {
+                        const transaction = db.transaction(['material'], 'readwrite');
+                        const store = transaction.objectStore('material');
+                        await new Promise((resolve, reject) => {
+                            const request = store.add({
+                                name: item.name,
+                                code: item.code || '',
+                                category: item.category || 'Ostatní',
+                                subcategory: item.subcategory || '',
+                                unit: item.unit || 'ks',
+                                price: item.price || 0,
+                                vat: item.vat || 21,
+                                supplier: item.supplier || 'Import'
+                            });
+                            request.onsuccess = () => resolve();
+                            request.onerror = () => resolve(); // Ignorovat duplicity
+                        });
+                        imported++;
+                    } catch (err) {
+                        // Ignorovat chyby (duplicity apod.)
+                    }
+                }
+                
+                // Progress update
+                if (items.length > 500 && i % 500 === 0) {
+                    showNotification(`Importováno ${imported}/${items.length}...`, 'success');
+                }
+            }
+            
+            return imported;
+        }
+
+        // Drag & Drop
+        function setupDragDrop() {
+            const zone = document.getElementById('importZone');
+            
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    handleFileImport({ target: { files: [file] } });
+                }
+            });
+        }
+
+        // Generování PDF
+        function generatePDF() {
+            if (quoteItems.length === 0) {
+                showNotification('Přidejte položky do nabídky', 'error');
+                return;
+            }
+            
+            const customerName = document.getElementById('customerName').value || 'Zákazník';
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Hlavička
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('CENOVÁ NABÍDKA', 105, 20, { align: 'center' });
+            
+            // Zákazník
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Zákazník: ${customerName}`, 20, 35);
+            doc.text(`Datum: ${new Date().toLocaleDateString('cs-CZ')}`, 20, 42);
+            
+            // Rozdělení na práce a materiál
+            const workItems = quoteItems.filter(i => i.type === 'prace');
+            const materialItems = quoteItems.filter(i => i.type === 'material');
+            
+            let currentY = 55;
+            
+            // Tabulka prací
+            if (workItems.length > 0) {
+                doc.setFont(undefined, 'bold');
+                doc.text('PRÁCE', 20, currentY);
+                currentY += 5;
+                
+                const workData = workItems.map(item => [
+                    item.name,
+                    item.quantity.toFixed(2),
+                    item.unit,
+                    item.customPrice.toFixed(2) + ' Kč',
+                    (item.quantity * item.customPrice * (1 + item.vat/100)).toFixed(2) + ' Kč'
+                ]);
+                
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Položka', 'Množství', 'Jedn.', 'Cena/jedn.', 'Celkem s DPH']],
+                    body: workData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [26, 115, 232] },
+                });
+                
+                currentY = doc.lastAutoTable.finalY + 10;
+            }
+            
+            // Tabulka materiálu
+            if (materialItems.length > 0) {
+                doc.setFont(undefined, 'bold');
+                doc.text('MATERIÁL', 20, currentY);
+                currentY += 5;
+                
+                const materialData = materialItems.map(item => [
+                    item.name,
+                    item.quantity.toFixed(2),
+                    item.unit,
+                    item.customPrice.toFixed(2) + ' Kč',
+                    (item.quantity * item.customPrice * (1 + item.vat/100)).toFixed(2) + ' Kč'
+                ]);
+                
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Položka', 'Množství', 'Jedn.', 'Cena/jedn.', 'Celkem s DPH']],
+                    body: materialData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [52, 168, 83] },
+                });
+                
+                currentY = doc.lastAutoTable.finalY + 10;
+            }
+            
+            // Součty
+            let totalWithoutVat = 0;
+            let totalVat = 0;
+            
+            quoteItems.forEach(item => {
+                const priceWithoutVat = item.quantity * item.customPrice;
+                const vat = priceWithoutVat * (item.vat / 100);
+                totalWithoutVat += priceWithoutVat;
+                totalVat += vat;
+            });
+            
+            const totalWithVat = totalWithoutVat + totalVat;
+            
+            doc.setFont(undefined, 'normal');
+            doc.text(`Celkem bez DPH: ${totalWithoutVat.toFixed(2)} Kč`, 120, currentY);
+            doc.text(`DPH: ${totalVat.toFixed(2)} Kč`, 120, currentY + 7);
+            
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(14);
+            doc.text(`CELKEM: ${totalWithVat.toFixed(2)} Kč`, 120, currentY + 17);
+            
+            doc.save(`nabidka_${customerName.replace(/\s+/g, '_')}.pdf`);
+            showNotification('PDF vygenerováno', 'success');
+        }
+
+        // Export dat
+        function exportData() {
+            const data = {
+                quote: quoteItems,
+                customer: {
+                    name: document.getElementById('customerName').value,
+                    address: document.getElementById('customerAddress').value,
+                    phone: document.getElementById('customerPhone').value,
+                },
+                date: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nabidka_export.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exportována', 'success');
+        }
+
+        // Notifikace
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <span>${type === 'success' ? '✓' : '⚠'}</span>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Info zpráva
+        function showInfo(message) {
+            showNotification(message + ' - Funkce dostupná v plné verzi', 'error');
+        }
+
+        // Inicializace
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
